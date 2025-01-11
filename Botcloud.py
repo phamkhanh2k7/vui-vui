@@ -2,8 +2,6 @@ import telebot
 import hashlib
 import secrets
 from telebot.types import InputMediaPhoto, InputMediaVideo
-from flask import Flask, request
-import os
 
 # Thay YOUR_BOT_TOKEN bằng token của bot
 TOKEN = "7648462649:AAHsPnWL7IlsGgtkTNxdHBm3xCmDbFbfjLU"
@@ -14,26 +12,6 @@ bot = telebot.TeleBot(TOKEN)
 user_sessions = {}
 link_mapping = {}  # Lưu ánh xạ từ mã băm -> (message_id, danh sách file)
 
-app = Flask(__name__)
-
-@app.route('/' + TOKEN, methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "OK", 200
-
-@app.route('/')
-def index():
-    return "Bot is running"
-
-# Thiết lập Webhook
-def set_webhook():
-    url = "https://your-vercel-url.vercel.app/" + TOKEN  # Thay bằng URL ứng dụng Vercel của bạn
-    bot.remove_webhook()  # Xóa webhook cũ nếu có
-    bot.set_webhook(url=url)  # Thiết lập webhook mới
-
-# Các hàm xử lý tin nhắn
 @bot.message_handler(content_types=["photo", "video"])
 def handle_media(message):
     user_id = message.from_user.id
@@ -117,7 +95,4 @@ def handle_start(message):
     # Gửi tin nhắn chào mừng
     bot.send_message(message.chat.id, welcome_message, protect_content=True)  # Ngăn không cho tin nhắn bị chuyển tiếp
 
-if __name__ == "__main__":
-    set_webhook()  # Thiết lập Webhook
-    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))  # Chạy Flask server
-    
+bot.infinity_polling()

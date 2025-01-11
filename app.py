@@ -1,10 +1,10 @@
-from flask import Flask, request
 import telebot
-import os
+import hashlib
 import secrets
 from telebot.types import InputMediaPhoto, InputMediaVideo
+from flask import Flask, request
 
-# Thay YOUR_BOT_TOKEN bằng token của bot của bạn
+# Thay YOUR_BOT_TOKEN bằng token của bot
 TOKEN = "7648462649:AAHsPnWL7IlsGgtkTNxdHBm3xCmDbFbfjLU"
 GROUP_CHAT_ID = -1002389087763  # ID nhóm Telegram để lưu file ID
 bot = telebot.TeleBot(TOKEN)
@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 # Lưu trữ tạm thời file_id theo phiên gửi
 user_sessions = {}
-link_mapping = {}
+link_mapping = {}  # Lưu ánh xạ từ mã băm -> (message_id, danh sách file)
 
 # Route chính để kiểm tra trạng thái bot
 @app.route('/')
@@ -24,7 +24,6 @@ def index():
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
-    print("Webhook data received:", json_str)  # Ghi log để kiểm tra webhook
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
     return "OK", 200
@@ -38,9 +37,40 @@ def set_webhook():
 # Xử lý lệnh /start
 @bot.message_handler(commands=["start"])
 def handle_start(message):
-    bot.reply_to(message, "Bot is running and ready to interact!")
+    # Thực hiện lệnh từ người dùng
+    if len(message.text.split()) > 1:
+        token = message.text.split()[1]  # Lấy token từ liên kết
+        if token in link_mapping:
+            message_id, media_list = link_mapping[token]
+            try:
+                # Gửi từng file lại cho người dùng
+                for file_id, file_type in media_list:
+                    if file_type == "Ảnh":
+                        bot.send_photo(message.chat.id, file_id)
+                    elif file_type == "Video":
+                        bot.send_video(message.chat.id, file_id)
+                bot.reply_to(message, "Đây là file của bạn!")
+            except Exception as e:
+                bot.reply_to(message, "Không tìm thấy dữ liệu liên kết. Vui lòng thử lại.")
+        else:
+            bot.reply_to(message, "Liên kết không hợp lệ hoặc đã hết hạn.")
+    else:
+        bot.reply_to(message, "👉Đây là bot lưu trữ hình ảnh, video thuộc về @sachkhongchuu \n🗣️Để sử dụng hãy ấn vào đường link mà bạn được cung cấp khi vượt link, có thắc mắc liên hệ ngay @nothinginthissss")
 
-# Xử lý các loại tin nhắn (hình ảnh, video)
+    # Gửi ảnh và tin nhắn chào mừng
+    welcome_photo_id = 'AgACAgUAAxkBAAMHZ3-3v62odawYX8suFAJLbKcGOFgAAhLDMRuiu-FXnxWilZ4-6AcBAAMCAAN5AAM2BA'  # File ID của ảnh
+    welcome_message = '🥳Chào mừng bạn đến với sách không chữ: https://t.me/addlist/thPNIyIPF8o0ZDBl\n\n👉Tham gia ngay: t.me/sachkhongchuu\n\n😛Mua bot, thuê bot hay có bất cứ vấn đề gì liên hệ @nothinginthissss '
+
+    bot.send_photo(
+        message.chat.id, 
+        welcome_photo_id,
+        caption="🥳 Chào mừng bạn đến với sách không chữ!",
+        reply_markup=None,
+        protect_content=True  # Ngăn không cho tin nhắn bị chuyển tiếp
+    )
+    # Gửi tin nhắn chào mừng
+    bot.send_message(message.chat.id, welcome_message, protect_content=True)  # Ngăn không cho tin nhắn bị chuyển tiếp
+
 @bot.message_handler(content_types=["photo", "video"])
 def handle_media(message):
     user_id = message.from_user.id
@@ -53,9 +83,7 @@ def handle_media(message):
     elif message.content_type == "video":
         file_id = message.video.file_id
         user_sessions[user_id].append((file_id, "Video"))
-    bot.reply_to(message, "Received your media!")
 
-# Xử lý lệnh /okay
 @bot.message_handler(commands=["okay"])
 def handle_ok(message):
     user_id = message.from_user.id
@@ -94,3 +122,4 @@ def handle_ok(message):
 if __name__ == "__main__":
     set_webhook()  # Thiết lập Webhook
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))  # Chạy Flask server
+    

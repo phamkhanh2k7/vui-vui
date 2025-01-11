@@ -29,10 +29,9 @@ def index():
 
 # Thiết lập Webhook
 def set_webhook():
-    # Cập nhật URL của webhook
     url = "https://your-vercel-url.vercel.app/" + TOKEN  # Thay bằng URL ứng dụng Vercel của bạn
-    bot.remove_webhook()
-    bot.set_webhook(url=url)
+    bot.remove_webhook()  # Xóa webhook cũ nếu có
+    bot.set_webhook(url=url)  # Thiết lập webhook mới
 
 # Các hàm xử lý tin nhắn
 @bot.message_handler(content_types=["photo", "video"])
@@ -121,3 +120,4 @@ def handle_start(message):
 if __name__ == "__main__":
     set_webhook()  # Thiết lập Webhook
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))  # Chạy Flask server
+    

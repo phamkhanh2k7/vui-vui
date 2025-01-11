@@ -29,6 +29,7 @@ def index():
 
 # Thiết lập Webhook
 def set_webhook():
+    # Cập nhật URL của webhook
     url = "https://your-vercel-url.vercel.app/" + TOKEN  # Thay bằng URL ứng dụng Vercel của bạn
     bot.remove_webhook()
     bot.set_webhook(url=url)

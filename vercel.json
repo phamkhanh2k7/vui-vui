@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "bot.py",
+      "src": "Botcloud.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "bot.py"
+      "dest": "Botcloud.py"
     }
   ]
 }

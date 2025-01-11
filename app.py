@@ -1,5 +1,6 @@
+from flask import Flask, request
 import telebot
-import hashlib
+import os
 import secrets
 from telebot.types import InputMediaPhoto, InputMediaVideo
 
@@ -8,9 +9,31 @@ TOKEN = "7648462649:AAHsPnWL7IlsGgtkTNxdHBm3xCmDbFbfjLU"
 GROUP_CHAT_ID = -1002389087763  # ID nhóm Telegram để lưu file ID
 bot = telebot.TeleBot(TOKEN)
 
-# Lưu trữ tạm thời file_id theo phiên gửi
+# Tạo ứng dụng Flask
+app = Flask(__name__)
+
+# Webhook route
+@app.route('/' + TOKEN, methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "OK", 200
+
+# Route chính để kiểm tra trạng thái bot
+@app.route('/')
+def index():
+    return "Bot is running"
+
+# Thiết lập Webhook
+def set_webhook():
+    url = "https://your-vercel-url.vercel.app/" + TOKEN  # Thay bằng URL ứng dụng Vercel của bạn
+    bot.remove_webhook()
+    bot.set_webhook(url=url)
+
+# Các hàm xử lý tin nhắn
 user_sessions = {}
-link_mapping = {}  # Lưu ánh xạ từ mã băm -> (message_id, danh sách file)
+link_mapping = {}
 
 @bot.message_handler(content_types=["photo", "video"])
 def handle_media(message):
@@ -95,4 +118,8 @@ def handle_start(message):
     # Gửi tin nhắn chào mừng
     bot.send_message(message.chat.id, welcome_message, protect_content=True)  # Ngăn không cho tin nhắn bị chuyển tiếp
 
-bot.infinity_polling()
+# Chạy Flask server
+if __name__ == "__main__":
+    set_webhook()  # Thiết lập Webhook
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))  # Chạy Flask server
+    

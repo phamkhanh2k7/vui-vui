@@ -5,7 +5,7 @@ from telebot.types import InputMediaPhoto, InputMediaVideo
 from flask import Flask, request
 
 # Thay YOUR_BOT_TOKEN bằng token của bot
-TOKEN = "7648462649:AAHsPnWL7IlsGgtkTNxdHBm3xCmDbFbfjLU"
+TOKEN = "7541732551:AAFv4Up1cU0YTTDlXXhGniA9SMVV3P4oOvQ"
 GROUP_CHAT_ID = -1002389087763  # ID nhóm Telegram để lưu file ID
 bot = telebot.TeleBot(TOKEN)
 
